@@ -1,0 +1,61 @@
+# === Python cache ===
+__pycache__/
+*.py[cod]
+*$py.class
+
+# === Django-specific ===
+db.sqlite3
+*.sqlite3
+*.log
+
+# === Secret config files ===
+.env
+*.env
+.env.*
+
+# === Static and media files ===
+staticfiles/
+media/
+*.bak
+
+# === Compiled files and output ===
+*.pot
+*.pyc
+*.pyo
+
+# === Migrations ===
+Home/migrations/
+Timetable/migrations/
+Scheduler/migrations/
+!Home/migrations/__init__.py
+!Timetable/migrations/__init__.py
+!Scheduler/migrations/__init__.py
+
+# === Editor / IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# === Virtual Environment ===
+venv/
+env/
+.venv/
+ENV/
+
+# === Testing and coverage ===
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
+coverage.xml
+
+# === System files ===
+.DS_Store
+Thumbs.db
+
+# === Exported schedule files ===
+*.pdf
+*.xlsx
+exports/
+output/

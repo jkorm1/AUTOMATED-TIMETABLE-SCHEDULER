@@ -22,7 +22,7 @@ def generate_population(courses,course_credit_hours,lecturers_courses_mapping,le
             lecturer = random.choice(lecturers_courses_mapping[course])
             lecturer_days = lecturer_availability.get(lecturer)
             if not lecturer_days:
-                lecturer_days = {d: lecture_hours for d in days}  # fallback
+                lecturer_days = {d: lecture_hours for d in days}  
             
             days_available = list(lecturer_days.keys())
 
