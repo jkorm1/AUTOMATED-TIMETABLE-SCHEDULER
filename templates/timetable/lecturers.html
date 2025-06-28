@@ -1,0 +1,82 @@
+{% extends 'home/base.html' %}
+{% block title %}Lecturers{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h3 class="mb-4">Lecturers</h3>
+        <table class="table table-bordered table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Courses</th>
+                    <th>Office Location</th>
+                    <th>Max Courses</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lecturer in lecturers %}
+                <tr>
+                    <td>{{ lecturer.name }}</td>
+                    <td>{{ lecturer.department }}</td>
+                    <td>
+                        {% for course in lecturer.courses.all %}
+                            {{ course.course_code }}{% if not forloop.last %}, {% endif %}
+                        {% empty %}None{% endfor %}
+                    </td>
+                    <td>{{ lecturer.office_location|default:"N/A" }}</td>
+                    <td>{{ lecturer.max_courses }}</td>
+                    <td>{{ lecturer.is_active|yesno:"Active,Inactive" }}</td>
+                    <td>
+                        <a href="{% url 'edit_lecturer' lecturer.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                        <a href="{% url 'delete_lecturer' lecturer.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this lecturer?');">Delete</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7">No lecturers added yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p class="text-muted mt-3">Note: Courses must be assigned to lecturers later by editing each lecturer.</p>
+    </div>
+
+    <div class="col-md-4">
+        <h4>Add a New Lecturer</h4>
+        <form method="post" class="border p-3 rounded shadow-sm bg-light">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="name" class="form-label">Lecturer Name</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+            </div>
+            <div class="mb-3">
+                <label for="department" class="form-label">Department</label>
+                <input type="text" class="form-control" id="department" name="department" required>
+            </div>
+            <div class="mb-3">
+                <label for="office_location" class="form-label">Office Location</label>
+                <input type="text" class="form-control" id="office_location" name="office_location">
+            </div>
+            <div class="mb-3">
+                <label for="max_courses" class="form-label">Max Courses</label>
+                <input type="number" class="form-control" id="max_courses" name="max_courses" value="4" min="1">
+            </div>
+            <div class="mb-3">
+                <label for="availability" class="form-label">Availability (JSON or text)</label>
+                <textarea class="form-control" id="availability" name="availability" rows="4"></textarea>
+                <div class="form-text">
+                    Example: <code>{"Mon": ["8-10"], "Wed": ["10-12"]}</code>
+                </div>
+            </div>
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
+                <label class="form-check-label" for="is_active">Is Active</label>
+            </div>
+            <p class="text-muted">Courses can be assigned after adding the lecturer.</p>
+            <button type="submit" class="btn btn-primary w-100">Add Lecturer</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

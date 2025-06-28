@@ -1,0 +1,66 @@
+{% extends 'home/base.html' %}
+{% block title %}Edit Course{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3 class="mb-4">Edit Course - {{ course.course_code }}</h3>
+
+    <form method="post" class="border p-4 rounded shadow-sm bg-light">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="course_code" class="form-label">Course Code</label>
+            <input type="text" class="form-control" id="course_code" name="course_code" value="{{ course.course_code }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="course_title" class="form-label">Course Title</label>
+            <input type="text" class="form-control" id="course_title" name="course_title" value="{{ course.course_title }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="credit_hours" class="form-label">Credit Hours</label>
+            <input type="number" class="form-control" id="credit_hours" name="credit_hours" value="{{ course.credit_hours }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="department" class="form-label">Department</label>
+            <input type="text" class="form-control" id="department" name="department" value="{{ course.department }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="students_enrolled" class="form-label">Students Enrolled</label>
+            <input type="number" class="form-control" id="students_enrolled" name="students_enrolled" value="{{ course.students_enrolled }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="lecturers" class="form-label">Lecturers</label>
+            <select multiple class="form-select" id="lecturers" name="lecturers">
+                {% for lecturer in all_lecturers %}
+                    <option value="{{ lecturer.id }}" {% if lecturer in course.lecturers.all %}selected{% endif %}>
+                        {{ lecturer.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="classes" class="form-label">Classes</label>
+            <select multiple class="form-select" id="classes" name="classes">
+                {% for cls in all_classes %}
+                    <option value="{{ cls.id }}" {% if cls in course.classes.all %}selected{% endif %}>
+                        {{ cls.class_code }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="course_prerequisites" class="form-label">Prerequisites</label>
+            <select multiple class="form-select" id="course_prerequisites" name="course_prerequisites">
+                {% for prereq in all_courses %}
+                    {% if prereq.id != course.id %}
+                        <option value="{{ prereq.id }}" {% if prereq in course.course_prerequisites.all %}selected{% endif %}>
+                            {{ prereq.course_code }}
+                        </option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-success w-100">Update Course</button>
+        <a href="{% url 'courses' %}" class="btn btn-secondary w-100 mt-2">Cancel</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends 'home/base.html' %}
+{% block title %}Generate Timetable{% endblock %}
+
+{% block content %}
+
+<h2>Generated Schedule</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Course</th><th>Day</th><th>Period</th><th>Room</th><th>Lecturer</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in best_schedule %}
+        <tr>
+            <td>{{ entry.course }}</td>
+            <td>{{ entry.day }}</td>
+            <td>{{ entry.period }}</td>
+            <td>{{ entry.room }}</td>
+            <td>{{ entry.lecturer }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

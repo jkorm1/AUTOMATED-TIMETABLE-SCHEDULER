@@ -1,0 +1,16 @@
+{% extends 'home/base.html' %}
+{% block title %} Generate  Schedule{% endblock %}
+
+{% block content %}
+<div class="text-center mt-5">
+    <h2>Generate Timetable</h2>
+    <form method="post" action="{% url 'generate' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary mt-3">Run Scheduler</button>
+    </form>
+
+    {% if message %}
+        <div class="alert alert-info mt-4">{{ message }}</div>
+    {% endif %}
+</div>
+{% endblock %}
