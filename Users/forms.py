@@ -1,32 +1,42 @@
 from django import forms
-from .models import User
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import authenticate
-from .models import StudentProfile, LecturerProfile
+from .models import StudentProfile, LecturerProfile, User
 
-class CustomLoginForm(AuthenticationForm):
-    index_or_staff_id = forms.CharField(label='Index Number / Staff ID', required=True)
+class CustomLoginForm(forms.Form):
+    email = forms.EmailField(label='School Email', required=True)
+    password = forms.CharField(widget=forms.PasswordInput, required=True)
+    identifier = forms.CharField(label='Index Number / Staff ID', required=True)
 
     def clean(self):
         cleaned_data = super().clean()
-        email = cleaned_data.get('username')  
+        email = cleaned_data.get('email')
         password = cleaned_data.get('password')
-        id_value = cleaned_data.get('index_or_staff_id')
+        identifier = cleaned_data.get('identifier')
+
+        if not email:
+            raise forms.ValidationError("Email is required.")
+        email = email.lower()
+
+        if not password:
+            raise forms.ValidationError("Password is required.")
+
+        if not identifier:
+            raise forms.ValidationError("Index Number / Staff ID is required.")
 
         user = authenticate(username=email, password=password)
         if user is None:
             raise forms.ValidationError("Invalid email or password.")
 
-        # Additional check: match ID with profile
         if user.is_student:
             try:
-                if user.studentprofile.index_number != id_value:
+                if user.student_profile.index_number != identifier:
                     raise forms.ValidationError("Index number mismatch.")
             except StudentProfile.DoesNotExist:
                 raise forms.ValidationError("Student profile not found.")
         elif user.is_lecturer:
             try:
-                if user.lecturerprofile.staff_id != id_value:
+                if user.lecturer_profile.staff_id != identifier:
                     raise forms.ValidationError("Staff ID mismatch.")
             except LecturerProfile.DoesNotExist:
                 raise forms.ValidationError("Lecturer profile not found.")
@@ -34,44 +44,8 @@ class CustomLoginForm(AuthenticationForm):
         self.user_cache = user
         return cleaned_data
 
-class RegisterForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput)
-    index_number = forms.CharField(required=False)
-    staff_id = forms.CharField(required=False)
-    is_student = forms.BooleanField(required=False, widget=forms.HiddenInput())
-
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'password']
-
-    def clean(self):
-        cleaned_data = super().clean()
-        is_student = cleaned_data.get('is_student')
-        index_number = cleaned_data.get('index_number')
-        staff_id = cleaned_data.get('staff_id')
-
-        if is_student:
-            if not index_number:
-                raise forms.ValidationError("Index number is required for students.")
-        else:
-            if not staff_id:
-                raise forms.ValidationError("Staff ID is required for lecturers.")
-
-        return cleaned_data
-
-    def save(self, commit=True):
-        user = super().save(commit=False)
-        user.set_password(self.cleaned_data['password'])
-
-        is_student = self.cleaned_data.get('is_student')
-        if commit:
-            user.save()
-            if is_student:
-                StudentProfile.objects.create(user=user, index_number=self.cleaned_data['index_number'])
-            else:
-                LecturerProfile.objects.create(user=user, staff_id=self.cleaned_data['staff_id'])
-
-        return user
+    def get_user(self):
+        return self.user_cache
 
 class CustomRegisterForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput)
@@ -79,15 +53,10 @@ class CustomRegisterForm(forms.ModelForm):
     is_student = forms.BooleanField(required=False, widget=forms.HiddenInput())
     is_lecturer = forms.BooleanField(required=False, widget=forms.HiddenInput())
 
-    # Shared
     secondary_email = forms.EmailField(required=True)
-    
-    # Student fields
     index_number = forms.CharField(required=False)
     program = forms.CharField(required=False)
     level = forms.CharField(required=False)
-
-    # Lecturer fields
     staff_id = forms.CharField(required=False)
     department = forms.CharField(required=False)
 
@@ -99,8 +68,43 @@ class CustomRegisterForm(forms.ModelForm):
         cleaned_data = super().clean()
         password = cleaned_data.get('password')
         confirm_password = cleaned_data.get('confirm_password')
+        is_student = cleaned_data.get('is_student')
+        is_lecturer = cleaned_data.get('is_lecturer')
 
-        if password and confirm_password and password != confirm_password:
+        if not password or not confirm_password:
+            raise forms.ValidationError("Both password fields are required.")
+
+        if password != confirm_password:
             raise forms.ValidationError("Passwords do not match.")
-        
+
+        if is_student and not cleaned_data.get('index_number'):
+            raise forms.ValidationError("Index number is required for students.")
+        if is_lecturer and not cleaned_data.get('staff_id'):
+            raise forms.ValidationError("Staff ID is required for lecturers.")
+
         return cleaned_data
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data['password'])
+        user.is_student = self.cleaned_data.get('is_student', False)
+        user.is_lecturer = self.cleaned_data.get('is_lecturer', False)
+
+        if commit:
+            user.save()
+            if user.is_student:
+                StudentProfile.objects.create(
+                    user=user,
+                    index_number=self.cleaned_data['index_number'],
+                    program=self.cleaned_data['program'],
+                    level=self.cleaned_data['level'],
+                    secondary_email=self.cleaned_data['secondary_email']
+                )
+            elif user.is_lecturer:
+                LecturerProfile.objects.create(
+                    user=user,
+                    staff_id=self.cleaned_data['staff_id'],
+                    department=self.cleaned_data['department'],
+                    secondary_email=self.cleaned_data['secondary_email']
+                )
+        return user
