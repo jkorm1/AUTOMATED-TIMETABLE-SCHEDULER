@@ -1,47 +1,159 @@
 from django.db import models
 
-class Room(models.Model):
-    department_building = models.CharField(max_length=100)
-    capacity = models.PositiveIntegerField()
-    room_code = models.CharField(max_length=20, unique=True)
-    room_type = models.CharField(max_length=20)
+class Building(models.Model):
+    """Represents a building on campus"""
+    code = models.CharField(max_length=10, unique=True)
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.room_code} - {self.room_type}"
+        return f"{self.code} - {self.name}"
+
+
+class RoomType(models.Model):
+    """Types of rooms (lecture hall, lab, classroom etc.)"""
+    name = models.CharField(max_length=50, unique=True)
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class LabType(models.Model):
+    """Types of labs (IT, Chemistry, Physics etc.)"""
+    name = models.CharField(max_length=50, unique=True)
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Room(models.Model):
+    """Represents physical rooms in buildings"""
+    code = models.CharField(max_length=20, unique=True)
+    building = models.ForeignKey(Building, on_delete=models.CASCADE)
+    room_type = models.ForeignKey(RoomType, on_delete=models.CASCADE)
+    lab_type = models.ForeignKey(LabType, on_delete=models.SET_NULL, blank=True, null=True)
+    capacity = models.PositiveIntegerField()
+    dimensions = models.CharField(max_length=20)
+    max_courses = models.PositiveIntegerField(default=1)
+    proctors_required = models.PositiveIntegerField(default=1)
+    is_overflow = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['code']
+
+    def __str__(self):
+        return f"{self.code} ({self.room_type.name})"
+
+
+class Department(models.Model):
+    """Academic departments"""
+    code = models.CharField(max_length=10, unique=True)
+    name = models.CharField(max_length=100)
+    building = models.ForeignKey(Building, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Class(models.Model):
-    class_code = models.CharField(max_length=20, unique=True)
+    """Student classes/groups (like CS100, OP200 etc.)"""
+    code = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=100, blank=True, null=True)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
     level = models.PositiveIntegerField()
-    department = models.CharField(max_length=50)
-    college = models.CharField(max_length=50)
-    class_size = models.PositiveIntegerField()
+    size = models.PositiveIntegerField()
+    
+    class Meta:
+        verbose_name_plural = "Classes"
+        ordering = ['code']
 
     def __str__(self):
-        return f"{self.class_code} - {self.class_size}"
+        return self.code
 
 
 class Lecturer(models.Model):
+    """Teaching staff"""
     name = models.CharField(max_length=100)
-    department = models.CharField(max_length=100)
-    availability = models.JSONField(blank=True, null=True)
-    office_location = models.CharField(max_length=100, blank=True, null=True)
-    is_active = models.BooleanField(default=True)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
+    availability = models.JSONField(blank=True, null=True)  # For regular teaching availability
+    proctor_availability = models.JSONField(blank=True, null=True)  # For exam proctoring availability
+    is_proctor = models.BooleanField(default=False)
     max_courses = models.PositiveIntegerField(default=4)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class CourseType(models.Model):
+    """Types of courses (lecture, lab etc.)"""
+    name = models.CharField(max_length=50, unique=True)
+    description = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.name
 
 
 class Course(models.Model):
-    course_code = models.CharField(max_length=10, unique=True)
-    course_title = models.CharField(max_length=100)
-    credit_hours = models.PositiveSmallIntegerField()
-    department = models.CharField(max_length=100)
-    students_enrolled = models.PositiveIntegerField()
-    course_prerequisites = models.ManyToManyField('self', blank=True, symmetrical=False)
+    """Academic courses"""
+    code = models.CharField(max_length=20, unique=True)
+    title = models.CharField(max_length=200)
+    course_type = models.ForeignKey(CourseType, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
+    credit_hours = models.PositiveIntegerField()
+    enrollment = models.PositiveIntegerField()
     lecturers = models.ManyToManyField(Lecturer, related_name='courses')
     classes = models.ManyToManyField(Class, related_name='courses')
+    requires_lab = models.BooleanField(default=False)
+    lab_type = models.ForeignKey(LabType, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        ordering = ['code']
 
     def __str__(self):
-        return f"{self.course_code} - {self.course_title}"
+        return f"{self.code} - {self.title}"
+
+
+class TimeSlot(models.Model):
+    """Time slots for scheduling"""
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    code = models.CharField(max_length=20, unique=True)
+    is_lecture_slot = models.BooleanField(default=True)
+    is_exam_slot = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['start_time']
+
+    def __str__(self):
+        return f"{self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')}"
+
+
+class ExamDate(models.Model):
+    """Specific exam dates"""
+    date = models.DateField(unique=True)
+    day_name = models.CharField(max_length=10)
+
+    class Meta:
+        ordering = ['date']
+
+    def __str__(self):
+        return f"{self.date} ({self.day_name})"
+
+
+class ProctorAssignment(models.Model):
+    """Assignment of proctors to exam dates"""
+    proctor = models.ForeignKey(Lecturer, on_delete=models.CASCADE, limit_choices_to={'is_proctor': True})
+    exam_date = models.ForeignKey(ExamDate, on_delete=models.CASCADE)
+    is_available = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('proctor', 'exam_date')
+
+    def __str__(self):
+        return f"{self.proctor.name} on {self.exam_date.date}"

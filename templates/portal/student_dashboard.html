@@ -1,0 +1,71 @@
+{% extends 'portal/base.html' %}
+{% block title %}Student Dashboard{% endblock %}
+{% block content %}
+<h2 class="mb-4">Welcome, {{ request.user.first_name }}</h2>
+
+<!-- Class Timetable -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">Class Timetable</div>
+    <div class="card-body">
+        {% if class_timetable %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Day</th>
+                    <th>Period</th>
+                    <th>Room</th>
+                    <th>Lecturer</th>
+                    <th>Course</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in class_timetable %}
+                <tr>
+                    <td>{{ item.day }}</td>
+                    <td>{{ item.period }}</td>
+                    <td>{{ item.room.room_code }}</td>
+                    <td>{{ item.lecturer }}</td>
+                    <td>{{ item.course.code }} - {{ item.course.title }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No class timetable available.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Exam Timetable -->
+<div class="card mb-4">
+    <div class="card-header bg-danger text-white">Exam Timetable</div>
+    <div class="card-body">
+        {% if exam_timetable %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Day</th>
+                    <th>Period</th>
+                    <th>Room</th>
+                    <th>Lecturer</th>
+                    <th>Course</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in exam_timetable %}
+                <tr>
+                    <td>{{ item.day }}</td>
+                    <td>{{ item.period }}</td>
+                    <td>{{ item.room.room_code }}</td>
+                    <td>{{ item.lecturer }}</td>
+                    <td>{{ item.course.code }} - {{ item.course.title }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No exam timetable available.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

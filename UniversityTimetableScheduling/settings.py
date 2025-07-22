@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'Home.apps.HomeConfig',
     'Scheduler.apps.SchedulerConfig',
     'Timetable.apps.TimetableConfig',
+    'Users.apps.UsersConfig',
+    'Portal.apps.PortalConfig',
 ]
 
 MIDDLEWARE = [
@@ -102,6 +104,9 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+AUTH_USER_MODEL = 'Users.User'
+
 
 
 # Internationalization

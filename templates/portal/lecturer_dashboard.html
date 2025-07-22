@@ -1,0 +1,71 @@
+{% extends 'portal/base.html' %}
+{% block title %}Lecturer Dashboard{% endblock %}
+{% block content %}
+<h2 class="mb-4">Welcome, {{ request.user.first_name }}</h2>
+
+<!-- Lectures -->
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">Your Lectures</div>
+    <div class="card-body">
+        {% if lectures %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Day</th>
+                    <th>Period</th>
+                    <th>Room</th>
+                    <th>Course</th>
+                    <th>Class</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in lectures %}
+                <tr>
+                    <td>{{ item.day }}</td>
+                    <td>{{ item.period }}</td>
+                    <td>{{ item.room.room_code }}</td>
+                    <td>{{ item.course.code }} - {{ item.course.title }}</td>
+                    <td>{{ item.course.program }} - {{ item.course.level }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No lectures scheduled.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Exam Invigilation -->
+<div class="card mb-4">
+    <div class="card-header bg-warning text-dark">Exam Invigilation Duties</div>
+    <div class="card-body">
+        {% if exams %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Day</th>
+                    <th>Period</th>
+                    <th>Room</th>
+                    <th>Course</th>
+                    <th>Class</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in exams %}
+                <tr>
+                    <td>{{ item.day }}</td>
+                    <td>{{ item.period }}</td>
+                    <td>{{ item.room.room_code }}</td>
+                    <td>{{ item.course.code }} - {{ item.course.title }}</td>
+                    <td>{{ item.course.program }} - {{ item.course.level }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No invigilation duties assigned.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
