@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    Building, RoomType, LabType, Room, Department, Class, Lecturer,
+    Building, RoomType, LabType, Room, Department, Class, Lecturer,College,
     CourseType, Course, TimeSlot, ExamDate, ProctorAssignment
 )
 
@@ -10,6 +10,7 @@ admin.site.register(RoomType)
 admin.site.register(LabType)
 admin.site.register(CourseType)
 admin.site.register(ExamDate)
+admin.site.register(College)
 
 
 @admin.register(Room)

@@ -1,10 +1,24 @@
 from django.db import models
 
+class College(models.Model):
+    """Represents a college/faculty (e.g., College of Science)"""
+    code = models.CharField(max_length=10, unique=True)
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class Building(models.Model):
     """Represents a building on campus"""
     code = models.CharField(max_length=10, unique=True)
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
+    college = models.ForeignKey('College', on_delete=models.SET_NULL, null=True, blank=True, related_name='buildings')
 
     def __str__(self):
         return f"{self.code} - {self.name}"
@@ -52,9 +66,11 @@ class Department(models.Model):
     code = models.CharField(max_length=10, unique=True)
     name = models.CharField(max_length=100)
     building = models.ForeignKey(Building, on_delete=models.SET_NULL, null=True, blank=True)
+    college = models.ForeignKey('College', on_delete=models.SET_NULL, null=True, blank=True, related_name='departments')
 
     def __str__(self):
         return self.name
+
 
 
 class Class(models.Model):
