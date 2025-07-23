@@ -4,15 +4,17 @@ from django.contrib.auth import authenticate
 from .models import StudentProfile, LecturerProfile, User
 
 class CustomLoginForm(forms.Form):
-    email = forms.EmailField(label='School Email', required=True)
+    email = forms.EmailField(label="School Email", required=True)
     password = forms.CharField(widget=forms.PasswordInput, required=True)
-    identifier = forms.CharField(label='Index Number / Staff ID', required=True)
+    identifier = forms.CharField(label="Index Number / Staff ID", required=True)
+    is_student = forms.BooleanField(required=False, widget=forms.HiddenInput())
 
     def clean(self):
         cleaned_data = super().clean()
         email = cleaned_data.get('email')
         password = cleaned_data.get('password')
         identifier = cleaned_data.get('identifier')
+        is_student = cleaned_data.get('is_student')
 
         if not email:
             raise forms.ValidationError("Email is required.")

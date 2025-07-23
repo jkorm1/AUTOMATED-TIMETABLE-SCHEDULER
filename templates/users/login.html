@@ -28,18 +28,6 @@
 <form method="post" id="login-form">
     {% csrf_token %}
 
-    <!-- Toggle switch for role selection -->
-    <div class="mb-4 text-center">
-        <div class="form-check form-switch d-inline-block me-3">
-            <input class="form-check-input" type="radio" name="is_student" value="True" id="role-student" checked>
-            <label class="form-check-label" for="role-student">Student</label>
-        </div>
-        <div class="form-check form-switch d-inline-block">
-            <input class="form-check-input" type="radio" name="is_student" value="False" id="role-lecturer">
-            <label class="form-check-label" for="role-lecturer">Lecturer</label>
-        </div>
-    </div>
-
     <div class="mb-3">
         <label class="form-label">School Email</label>
         <input type="email" name="email" class="form-control" placeholder="Enter school email" required>
