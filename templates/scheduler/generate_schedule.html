@@ -1,4 +1,5 @@
 {% extends 'home/base.html' %}
+{% load dict_extras %}
 {% block title %} Generate  Schedule{% endblock %}
 
 {% block content %}
@@ -6,11 +7,45 @@
     <h2>Generate Timetable</h2>
     <form method="post" action="{% url 'generate' %}">
         {% csrf_token %}
+        <div class="form-group">
+            <label for="college">Select College:</label>
+            <select name="college_id" id="college" class="form-control" required>
+                <option value="">-- Select College --</option>
+                {% for college in colleges %}
+                    <option value="{{ college.id }}">
+                        {{ college.name }}
+                        {% if college_timetable_status and college_timetable_status|dict_get:college.id %}
+                            (Timetable exists)
+                        {% else %}
+                            (No timetable yet)
+                        {% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
         <button type="submit" class="btn btn-primary mt-3">Run Scheduler</button>
     </form>
 
     {% if message %}
         <div class="alert alert-info mt-4">{{ message }}</div>
+    {% endif %}
+
+    {% if college_timetable_status %}
+        <div class="mt-4">
+            <h5>Timetable Status by College:</h5>
+            <ul class="list-group">
+                {% for college in colleges %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ college.name }}
+                        {% if college_timetable_status|dict_get:college.id %}
+                            <span class="badge badge-primary">Timetable exists</span>
+                        {% else %}
+                            <span class="badge badge-dark">No timetable yet</span>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
     {% endif %}
 </div>
 {% endblock %}

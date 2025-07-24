@@ -16,5 +16,9 @@ urlpatterns = [
     path('lecturers/delete/<int:lecturer_id>/', views.delete_lecturer, name='delete_lecturer'),
     path('courses/edit/<int:course_id>/', views.edit_course, name='edit_course'),
     path('courses/delete/<int:course_id>/', views.delete_course, name='delete_course'),
+    path('view/', views.view_timetable_hub, name='view_timetable'),
+    path('class_timetable/<int:class_id>/', views.class_timetable, name='class_timetable'),
+    path('lecturer_timetable/<int:lecturer_id>/', views.lecturer_timetable, name='lecturer_timetable'),
+    path('add_user/', views.add_user_frontend, name='add_user_frontend'),
 
 ]

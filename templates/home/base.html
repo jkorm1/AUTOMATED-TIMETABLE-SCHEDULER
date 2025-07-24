@@ -40,14 +40,19 @@
                           Timetable
                         </a>
                         <ul class="dropdown-menu">
-                          <li><a class="dropdown-item" href="#">View Timetable</a></li>
-                          <li><a class="dropdown-item" href="{%url 'generate_schedule'%}">Generate New Timetable</a></li>
+                          <li><a class="dropdown-item" href="{% url 'view_timetable' %}">View Timetable</a></li>
+                          <li><a class="dropdown-item" href="{% url 'generate' %}">Generate New Timetable</a></li>
                           <li><a class="dropdown-item" href="#">Test Timetable</a></li>
                           <li><hr class="dropdown-divider"></li>
                           <li><a class="dropdown-item" href="#">Delete Timetable</a></li>
                         </ul>
                       </li>
-                    <li class="nav-item"><a class="nav-link {%block aboutactive%} {%endblock%} " href="{% url 'about' %}">About</a></li>
+                    {% if user.is_staff %}
+                      <li class="nav-item">
+                        <a class="nav-link" href="{% url 'add_user_frontend' %}">Add User</a>
+                      </li>
+                      <li class="nav-item"><a class="nav-link {%block aboutactive%} {%endblock%} " href="{% url 'about' %}">About</a></li>
+                      {% endif %}
                     <li class="nav-item"><a class="nav-link {%block contactactive%} {%endblock%} " href="{% url 'contact' %}">Contact</a></li>
 
             </div>

@@ -1,0 +1,67 @@
+{% extends 'home/base.html' %}
+{% block title %}View Timetable{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">View Timetable</h2>
+<div class="row">
+  <div class="col-md-4">
+    <div class="form-group">
+      <label for="college_id">Select College:</label>
+      <select name="college_id" id="college_id" class="form-control" required>
+        <option value="">-- Select College --</option>
+        {% for college in colleges %}
+          <option value="{{ college.id }}">{{ college.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <a id="college_link" class="btn btn-primary mt-2" href="#">View College Timetable</a>
+  </div>
+  <div class="col-md-4">
+    <div class="form-group">
+      <label for="class_id">Select Class:</label>
+      <select name="class_id" id="class_id" class="form-control" required>
+        <option value="">-- Select Class --</option>
+        {% for class in classes %}
+          <option value="{{ class.id }}">{{ class.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <a id="class_link" class="btn btn-success mt-2" href="#">View Class Timetable</a>
+  </div>
+  <div class="col-md-4">
+    <div class="form-group">
+      <label for="lecturer_id">Select Lecturer:</label>
+      <select name="lecturer_id" id="lecturer_id" class="form-control" required>
+        <option value="">-- Select Lecturer --</option>
+        {% for lecturer in lecturers %}
+          <option value="{{ lecturer.id }}">{{ lecturer.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <a id="lecturer_link" class="btn btn-info mt-2" href="#">View Lecturer Timetable</a>
+  </div>
+</div>
+<script>
+  document.getElementById('college_link').onclick = function() {
+    var id = document.getElementById('college_id').value;
+    if (id) {
+      window.location.href = "{% url 'college_timetable' 0 %}".replace('0', id);
+    }
+    return false;
+  };
+  document.getElementById('class_link').onclick = function() {
+    var id = document.getElementById('class_id').value;
+    if (id) {
+      window.location.href = "{% url 'class_timetable' 0 %}".replace('0', id);
+    }
+    return false;
+  };
+  document.getElementById('lecturer_link').onclick = function() {
+    var id = document.getElementById('lecturer_id').value;
+    if (id) {
+      window.location.href = "{% url 'lecturer_timetable' 0 %}".replace('0', id);
+    }
+    return false;
+  };
+</script>
+{% endblock %} 

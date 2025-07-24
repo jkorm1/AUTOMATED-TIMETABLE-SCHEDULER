@@ -1,0 +1,76 @@
+{% extends 'home/base.html' %}
+{% block title %}Add User{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Add User (Admin Only)</h2>
+{% if generated %}
+  <div class="alert alert-success">
+    <strong>{{ generated.type }} Created!</strong><br>
+    Username: <code>{{ generated.username }}</code><br>
+    Email: <code>{{ generated.email }}</code><br>
+    Password: <code>{{ generated.password }}</code><br>
+    <em>Share these credentials securely with the user.</em>
+  </div>
+{% endif %}
+<form method="post" class="mb-4">
+  {% csrf_token %}
+  <div class="mb-3">
+    <label for="user_type" class="form-label">User Type:</label>
+    <select id="user_type" name="user_type" class="form-control" required onchange="toggleFields()">
+      <option value="">-- Select Type --</option>
+      <option value="student">Student</option>
+      <option value="lecturer">Lecturer</option>
+    </select>
+  </div>
+  <div class="mb-3">
+    <label for="first_name" class="form-label">First Name:</label>
+    <input type="text" id="first_name" name="first_name" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label for="last_name" class="form-label">Last Name:</label>
+    <input type="text" id="last_name" name="last_name" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label for="email" class="form-label">Email:</label>
+    <input type="email" id="email" name="email" class="form-control" required>
+  </div>
+  <div id="student_fields" style="display:none;">
+    <div class="mb-3">
+      <label for="student_id" class="form-label">Student ID:</label>
+      <input type="text" id="student_id" name="student_id" class="form-control">
+    </div>
+    <div class="mb-3">
+      <label for="class_id" class="form-label">Class:</label>
+      <select id="class_id" name="class_id" class="form-control">
+        <option value="">-- Select Class --</option>
+        {% for c in classes %}
+          <option value="{{ c.id }}">{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <div id="lecturer_fields" style="display:none;">
+    <div class="mb-3">
+      <label for="lecturer_id" class="form-label">Lecturer ID:</label>
+      <input type="text" id="lecturer_id" name="lecturer_id" class="form-control">
+    </div>
+    <div class="mb-3">
+      <label for="department_id" class="form-label">Department:</label>
+      <select id="department_id" name="department_id" class="form-control">
+        <option value="">-- Select Department --</option>
+        {% for d in departments %}
+          <option value="{{ d.id }}">{{ d.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <button type="submit" class="btn btn-primary">Add User</button>
+</form>
+<script>
+function toggleFields() {
+  var type = document.getElementById('user_type').value;
+  document.getElementById('student_fields').style.display = (type === 'student') ? '' : 'none';
+  document.getElementById('lecturer_fields').style.display = (type === 'lecturer') ? '' : 'none';
+}
+</script>
+{% endblock %} 

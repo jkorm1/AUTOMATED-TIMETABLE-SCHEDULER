@@ -1,0 +1,47 @@
+{% extends 'home/base.html' %}
+{% load dict_extras %}
+{% block title %}{{ college.name }} Timetable{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <form class="form-inline d-flex align-items-center">
+    <label for="college_select" class="me-2">Switch College:</label>
+    <select id="college_select" class="form-control me-2">
+      {% for c in colleges %}
+        <option value="{{ c.id }}" {% if c.id == college.id %}selected{% endif %}>{{ c.name }}</option>
+      {% endfor %}
+    </select>
+    <button type="button" class="btn btn-primary" onclick="window.location.href='{% url 'college_timetable' 0 %}'.replace('0', document.getElementById('college_select').value)">Go</button>
+  </form>
+</div>
+<h2 class="mb-4">Timetable for {{ college.name }}</h2>
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Day / Period</th>
+            {% for period in periods %}
+                <th>{{ period }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for day in days %}
+        <tr>
+            <th>{{ day }}</th>
+            {% for period in periods %}
+            <td style="min-width: 120px;">
+                {% for entry in grid|dict_chain_get:day|dict_chain_get:period %}
+                    <div><strong>{{ entry.course }}</strong> ({{ entry.class }})<br>
+                    <span class="text-muted">{{ entry.lecturer }}</span><br>
+                    <span class="text-info">{{ entry.room }}</span></div>
+                    {% if not forloop.last %}<hr>{% endif %}
+                {% empty %}
+                    <span class="text-secondary">-</span>
+                {% endfor %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %} 

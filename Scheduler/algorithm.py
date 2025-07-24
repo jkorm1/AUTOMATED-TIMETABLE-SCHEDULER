@@ -75,7 +75,7 @@ def generate_population(courses,course_credit_hours,lecturers_courses_mapping,le
 
 
 
-def fitness(schedule, student_enrollment, room_size, course_prerequisites, min_periods=2, max_periods=5):
+def fitness(schedule, student_enrollment, room_size, min_periods=2, max_periods=5):
     score = 1000
     room_occupancy = {}
     lecturer_schedule = {}
@@ -119,18 +119,6 @@ def fitness(schedule, student_enrollment, room_size, course_prerequisites, min_p
             score -= 20 * (min_periods - periods)  #  (Soft constraint)
         elif periods > max_periods:
             score -= 20 * (periods - max_periods)  # (Soft constraint)
-
-    # Constraint 5: Prerequisite enforcement (Courses should not be scheduled before their prerequisites)
-    for course, prereqs in course_prerequisites.items():
-        if course in course_schedule:
-            course_day, course_period = course_schedule[course]
-            for prereq in prereqs:
-                if prereq not in course_schedule:
-                    score -= 20  #  (Soft constraint)
-                else:
-                    prereq_day, prereq_period = course_schedule[prereq]
-                    if (day_order[prereq_day], prereq_period) >= (day_order[course_day], course_period):
-                        score -= 20  #  (Soft constraint)
 
     return score
 
@@ -212,7 +200,6 @@ def run_genetic_algorithm(
     courses,
     course_credit_hours,
     student_enrollment,
-    course_prerequisites,
     lecturers,
     lecturers_courses_mapping,
     lecturer_availability,
@@ -232,11 +219,9 @@ def run_genetic_algorithm(
     size=population_size
 )
 
-
-
     for gen in range(generations):
         fitness_scores = [
-            fitness(individual, student_enrollment, room_size, course_prerequisites)
+            fitness(individual, student_enrollment, room_size)
             for individual in population
         ]
 
@@ -267,7 +252,7 @@ def run_genetic_algorithm(
         print(f"Generation {gen+1}: Best Score = {best_score}, Avg Score = {avg_score:.2f}")
 
     final_fitness_scores = [
-        fitness(individual, student_enrollment, room_size, course_prerequisites)
+        fitness(individual, student_enrollment, room_size)
         for individual in population
     ]
     best_index = final_fitness_scores.index(max(final_fitness_scores))

@@ -1,7 +1,8 @@
 from django.contrib import admin
 from .models import (
-    Building, RoomType, LabType, Room, Department, Class, Lecturer,
-    CourseType, Course, TimeSlot, ExamDate, ProctorAssignment
+    Building, RoomType, LabType, Room, Department, Class, Lecturer,College,
+    CourseType, Course, TimeSlot, ExamDate, ProctorAssignment, LectureSchedule,
+    StudentProfile, LecturerProfile
 )
 
 
@@ -10,6 +11,7 @@ admin.site.register(RoomType)
 admin.site.register(LabType)
 admin.site.register(CourseType)
 admin.site.register(ExamDate)
+admin.site.register(College)
 
 
 @admin.register(Room)
@@ -59,3 +61,23 @@ class ProctorAssignmentAdmin(admin.ModelAdmin):
     list_display = ('proctor', 'exam_date', 'is_available')
     list_filter = ('exam_date', 'is_available')
     search_fields = ('proctor__name',)
+
+
+@admin.register(LectureSchedule)
+class LectureScheduleAdmin(admin.ModelAdmin):
+    list_display = ('program_class', 'course', 'lecturer', 'room', 'day', 'period')
+    list_filter = ('day', 'period', 'room', 'lecturer', 'program_class')
+    search_fields = ('course__code', 'program_class__code', 'lecturer__name')
+
+
+@admin.register(StudentProfile)
+class StudentProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'student_id', 'class_obj', 'first_login')
+    search_fields = ('user__username', 'student_id')
+    list_filter = ('class_obj', 'first_login')
+
+@admin.register(LecturerProfile)
+class LecturerProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'lecturer_id', 'department', 'first_login')
+    search_fields = ('user__username', 'lecturer_id')
+    list_filter = ('department', 'first_login')

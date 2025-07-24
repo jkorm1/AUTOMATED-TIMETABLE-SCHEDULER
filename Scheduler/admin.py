@@ -1,18 +1,10 @@
 from django.contrib import admin
 from .models import (
-    LectureSchedule,
     ExamSchedule,
     ExamRoomAssignment,
     ExamRoomClassAllocation,
     StudentExamAllocation
 )
-
-
-@admin.register(LectureSchedule)
-class LectureScheduleAdmin(admin.ModelAdmin):
-    list_display = ('course', 'assigned_class', 'lecturer', 'room', 'day', 'time_slot', 'created_at')
-    list_filter = ('day', 'time_slot', 'room')
-    search_fields = ('course__code', 'assigned_class__code', 'lecturer__name')
 
 
 @admin.register(ExamSchedule)

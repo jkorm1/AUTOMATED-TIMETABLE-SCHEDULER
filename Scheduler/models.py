@@ -1,17 +1,5 @@
 from django.db import models
 
-class LectureSchedule(models.Model):
-    course = models.ForeignKey('Timetable.Course', on_delete=models.CASCADE)
-    assigned_class = models.ForeignKey('Timetable.Class', on_delete=models.CASCADE)
-    lecturer = models.ForeignKey('Timetable.Lecturer', on_delete=models.CASCADE)
-    room = models.ForeignKey('Timetable.Room', on_delete=models.CASCADE)
-    day = models.CharField(max_length=10)  # E.g. 'Monday'
-    time_slot = models.ForeignKey('Timetable.TimeSlot', on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.course.code} - {self.day} - {self.time_slot}"
-
 
 
 

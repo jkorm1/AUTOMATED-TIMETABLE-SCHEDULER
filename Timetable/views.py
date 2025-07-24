@@ -1,7 +1,15 @@
 from django.shortcuts import render,HttpResponse,redirect
 from django.shortcuts import get_object_or_404
-from .models import Room,Class,Lecturer,Course
-
+from .models import Room,Class,Lecturer,Course,College
+from django.http import Http404
+from .models import LectureSchedule
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.models import Group
+import random
+import string
+from django.shortcuts import render, redirect
+from django.contrib.auth import get_user_model
+from .models import StudentProfile, LecturerProfile, Department
 
 
 
@@ -240,6 +248,126 @@ def delete_class(request, class_id):
     class_obj = get_object_or_404(Class, id=class_id)
     class_obj.delete()
     return redirect('classes')
+
+
+def view_timetable_hub(request):
+    colleges = College.objects.all()
+    classes = Class.objects.all()
+    lecturers = Lecturer.objects.all()
+    return render(request, 'timetable/view_timetable.html', {
+        'colleges': colleges,
+        'classes': classes,
+        'lecturers': lecturers,
+    })
+
+
+def class_timetable(request, class_id):
+    try:
+        class_obj = Class.objects.get(id=class_id)
+    except Class.DoesNotExist:
+        raise Http404("Class not found")
+    classes = Class.objects.all()
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    periods = [
+        '8:00 - 8:55', '9:00 - 9:55', '10:30 - 11:25', '11:30 - 12:25',
+        '13:00 - 13:55', '14:00 - 14:55', '15:00 - 15:55',
+        '16:00 - 16:55', '17:00 - 17:55', '18:00 - 18:55'
+    ]
+    schedules = LectureSchedule.objects.filter(program_class=class_obj)
+    grid = {day: {period: [] for period in periods} for day in days}
+    for sched in schedules:
+        grid[sched.day][sched.period].append({
+            'course': sched.course.code,
+            'lecturer': sched.lecturer.name if sched.lecturer else '',
+            'room': sched.room.code if sched.room else '',
+        })
+    return render(request, 'timetable/class_timetable.html', {
+        'class_obj': class_obj,
+        'classes': classes,
+        'days': days,
+        'periods': periods,
+        'grid': grid,
+    })
+
+
+def lecturer_timetable(request, lecturer_id):
+    try:
+        lecturer = Lecturer.objects.get(id=lecturer_id)
+    except Lecturer.DoesNotExist:
+        raise Http404("Lecturer not found")
+    lecturers = Lecturer.objects.all()
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    periods = [
+        '8:00 - 8:55', '9:00 - 9:55', '10:30 - 11:25', '11:30 - 12:25',
+        '13:00 - 13:55', '14:00 - 14:55', '15:00 - 15:55',
+        '16:00 - 16:55', '17:00 - 17:55', '18:00 - 18:55'
+    ]
+    schedules = LectureSchedule.objects.filter(lecturer=lecturer)
+    grid = {day: {period: [] for period in periods} for day in days}
+    for sched in schedules:
+        grid[sched.day][sched.period].append({
+            'course': sched.course.code,
+            'class': sched.program_class.code if sched.program_class else '',
+            'room': sched.room.code if sched.room else '',
+        })
+    return render(request, 'timetable/lecturer_timetable.html', {
+        'lecturer': lecturer,
+        'lecturers': lecturers,
+        'days': days,
+        'periods': periods,
+        'grid': grid,
+    })
+
+
+@staff_member_required
+def add_user_frontend(request):
+    classes = Class.objects.all()
+    departments = Department.objects.all()
+    generated = None
+    User = get_user_model()
+    if request.method == 'POST':
+        user_type = request.POST['user_type']
+        first_name = request.POST['first_name']
+        last_name = request.POST['last_name']
+        email = request.POST['email']
+        username = email.split('@')[0]
+        password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+        if User.objects.filter(email=email).exists():
+            return render(request, 'timetable/add_user_frontend.html', {
+                'classes': classes,
+                'departments': departments,
+                'error': 'A user with this email already exists.'
+            })
+        if user_type == 'student':
+            student_id = request.POST['student_id']
+            class_obj = Class.objects.get(id=request.POST['class_id'])
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name
+            )
+            StudentProfile.objects.create(user=user, student_id=student_id, class_obj=class_obj)
+            group, _ = Group.objects.get_or_create(name='Students')
+            user.groups.add(group)
+            generated = {'type': 'Student', 'username': username, 'email': email, 'password': password}
+        elif user_type == 'lecturer':
+            lecturer_id = request.POST['lecturer_id']
+            department = Department.objects.get(id=request.POST['department_id'])
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name
+            )
+            LecturerProfile.objects.create(user=user, lecturer_id=lecturer_id, department=department)
+            group, _ = Group.objects.get_or_create(name='Lecturers')
+            user.groups.add(group)
+            generated = {'type': 'Lecturer', 'username': username, 'email': email, 'password': password}
+        return render(request, 'timetable/add_user_frontend.html', {'classes': classes, 'departments': departments, 'generated': generated})
+    return render(request, 'timetable/add_user_frontend.html', {'classes': classes, 'departments': departments})
 
 
 
