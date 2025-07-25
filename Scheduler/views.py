@@ -100,7 +100,7 @@ def generate(request):
         lecturer_availability = {}
         for item in Lecturer.objects.values('name', 'availability'):
             availability = item['availability']
-            if isinstance(availability, dict):
+            if isinstance(availability, dict):  
                 lecturer_availability[item['name']] = availability
             else:
                 lecturer_availability[item['name']] = {}
@@ -126,10 +126,10 @@ def generate(request):
             'selected_college': selected_college,
             'accept_mode': True,
         })
-# End of POST branch
+    # End of POST branch
     else:
         # GET: show form
-        return render(request, 'scheduler/generate_schedule.html', {'colleges': colleges, 'college_timetable_status': college_timetable_status})
+         return render(request, 'scheduler/generate_schedule.html', {'colleges': colleges, 'college_timetable_status': college_timetable_status})
 
 
 def college_timetable(request, college_id):

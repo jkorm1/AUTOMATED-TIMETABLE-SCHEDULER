@@ -1,40 +1,36 @@
 {% extends 'portal/base.html' %}
 {% block title %}Lecturer Dashboard{% endblock %}
 {% block content %}
-<h2 class="mb-4">Welcome, {{ request.user.first_name }}</h2>
-
-<!-- Lectures -->
-<div class="card mb-4">
-    <div class="card-header bg-success text-white">Your Lectures</div>
-    <div class="card-body">
-        {% if lectures %}
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Day</th>
-                    <th>Period</th>
-                    <th>Room</th>
-                    <th>Course</th>
-                    <th>Class</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in lectures %}
-                <tr>
-                    <td>{{ item.day }}</td>
-                    <td>{{ item.period }}</td>
-                    <td>{{ item.room.room_code }}</td>
-                    <td>{{ item.course.code }} - {{ item.course.title }}</td>
-                    <td>{{ item.course.program }} - {{ item.course.level }}</td>
-                </tr>
+{% load dict_extras %}
+<h2 class="mb-4">Timetable for {{ lecturer.name }}</h2>
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Day / Period</th>
+            {% for period in periods %}
+                <th>{{ period }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for day in days %}
+        <tr>
+            <th>{{ day }}</th>
+            {% for period in periods %}
+            <td style="min-width: 120px;">
+                {% for entry in grid|dict_chain_get:day|dict_chain_get:period %}
+                    <div><strong>{{ entry.course }}</strong> ({{ entry.class }})<br>
+                    <span class="text-info">{{ entry.room }}</span></div>
+                    {% if not forloop.last %}<hr>{% endif %}
+                {% empty %}
+                    <span class="text-secondary">-</span>
                 {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p>No lectures scheduled.</p>
-        {% endif %}
-    </div>
-</div>
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
 <!-- Exam Invigilation -->
 <div class="card mb-4">

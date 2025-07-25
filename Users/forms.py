@@ -49,64 +49,64 @@ class CustomLoginForm(forms.Form):
     def get_user(self):
         return self.user_cache
 
-class CustomRegisterForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput)
-    confirm_password = forms.CharField(widget=forms.PasswordInput)
-    is_student = forms.BooleanField(required=False, widget=forms.HiddenInput())
-    is_lecturer = forms.BooleanField(required=False, widget=forms.HiddenInput())
+# class CustomRegisterForm(forms.ModelForm):
+#     password = forms.CharField(widget=forms.PasswordInput)
+#     confirm_password = forms.CharField(widget=forms.PasswordInput)
+#     is_student = forms.BooleanField(required=False, widget=forms.HiddenInput())
+#     is_lecturer = forms.BooleanField(required=False, widget=forms.HiddenInput())
 
-    secondary_email = forms.EmailField(required=True)
-    index_number = forms.CharField(required=False)
-    program = forms.CharField(required=False)
-    level = forms.CharField(required=False)
-    staff_id = forms.CharField(required=False)
-    department = forms.CharField(required=False)
+#     secondary_email = forms.EmailField(required=True)
+#     index_number = forms.CharField(required=False)
+#     program = forms.CharField(required=False)
+#     level = forms.CharField(required=False)
+#     staff_id = forms.CharField(required=False)
+#     department = forms.CharField(required=False)
 
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'password', 'confirm_password']
+#     class Meta:
+#         model = User
+#         fields = ['username', 'email', 'password', 'confirm_password']
 
-    def clean(self):
-        cleaned_data = super().clean()
-        password = cleaned_data.get('password')
-        confirm_password = cleaned_data.get('confirm_password')
-        is_student = cleaned_data.get('is_student')
-        is_lecturer = cleaned_data.get('is_lecturer')
+#     def clean(self):
+#         cleaned_data = super().clean()
+#         password = cleaned_data.get('password')
+#         confirm_password = cleaned_data.get('confirm_password')
+#         is_student = cleaned_data.get('is_student')
+#         is_lecturer = cleaned_data.get('is_lecturer')
 
-        if not password or not confirm_password:
-            raise forms.ValidationError("Both password fields are required.")
+#         if not password or not confirm_password:
+#             raise forms.ValidationError("Both password fields are required.")
 
-        if password != confirm_password:
-            raise forms.ValidationError("Passwords do not match.")
+#         if password != confirm_password:
+#             raise forms.ValidationError("Passwords do not match.")
 
-        if is_student and not cleaned_data.get('index_number'):
-            raise forms.ValidationError("Index number is required for students.")
-        if is_lecturer and not cleaned_data.get('staff_id'):
-            raise forms.ValidationError("Staff ID is required for lecturers.")
+#         if is_student and not cleaned_data.get('index_number'):
+#             raise forms.ValidationError("Index number is required for students.")
+#         if is_lecturer and not cleaned_data.get('staff_id'):
+#             raise forms.ValidationError("Staff ID is required for lecturers.")
 
-        return cleaned_data
+#         return cleaned_data
 
-    def save(self, commit=True):
-        user = super().save(commit=False)
-        user.set_password(self.cleaned_data['password'])
-        user.is_student = self.cleaned_data.get('is_student', False)
-        user.is_lecturer = self.cleaned_data.get('is_lecturer', False)
+#     def save(self, commit=True):
+#         user = super().save(commit=False)
+#         user.set_password(self.cleaned_data['password'])
+#         user.is_student = self.cleaned_data.get('is_student', False)
+#         user.is_lecturer = self.cleaned_data.get('is_lecturer', False)
 
-        if commit:
-            user.save()
-            if user.is_student:
-                StudentProfile.objects.create(
-                    user=user,
-                    index_number=self.cleaned_data['index_number'],
-                    program=self.cleaned_data['program'],
-                    level=self.cleaned_data['level'],
-                    secondary_email=self.cleaned_data['secondary_email']
-                )
-            elif user.is_lecturer:
-                LecturerProfile.objects.create(
-                    user=user,
-                    staff_id=self.cleaned_data['staff_id'],
-                    department=self.cleaned_data['department'],
-                    secondary_email=self.cleaned_data['secondary_email']
-                )
-        return user
+#         if commit:
+#             user.save()
+#             if user.is_student:
+#                 StudentProfile.objects.create(
+#                     user=user,
+#                     index_number=self.cleaned_data['index_number'],
+#                     program=self.cleaned_data['program'],
+#                     level=self.cleaned_data['level'],
+#                     secondary_email=self.cleaned_data['secondary_email']
+#                 )
+#             elif user.is_lecturer:
+#                 LecturerProfile.objects.create(
+#                     user=user,
+#                     staff_id=self.cleaned_data['staff_id'],
+#                     department=self.cleaned_data['department'],
+#                     secondary_email=self.cleaned_data['secondary_email']
+#                 )
+#         return user

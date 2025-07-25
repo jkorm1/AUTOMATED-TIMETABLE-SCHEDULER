@@ -95,6 +95,7 @@ class Lecturer(models.Model):
     """Teaching staff"""
     name = models.CharField(max_length=100)
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
+    staff_id = models.CharField(max_length=20, unique=True, db_index=True, null=True, blank=True)
     availability = models.JSONField(blank=True, null=True)  # For regular teaching availability
     proctor_availability = models.JSONField(blank=True, null=True)  # For exam proctoring availability
     is_proctor = models.BooleanField(default=False)
@@ -202,7 +203,6 @@ class StudentProfile(models.Model):
 class LecturerProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     lecturer_id = models.CharField(max_length=20, unique=True)
-    department = models.ForeignKey('Department', on_delete=models.SET_NULL, null=True, blank=True)
     first_login = models.BooleanField(default=True)
     # Add other lecturer-specific fields as needed
 

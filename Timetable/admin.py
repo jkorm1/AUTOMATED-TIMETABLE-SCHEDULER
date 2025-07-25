@@ -36,9 +36,9 @@ class ClassAdmin(admin.ModelAdmin):
 
 @admin.register(Lecturer)
 class LecturerAdmin(admin.ModelAdmin):
-    list_display = ('name', 'department', 'is_proctor', 'is_active', 'max_courses')
+    list_display = ('name', 'department', 'staff_id', 'is_proctor', 'is_active', 'max_courses')
     list_filter = ('department', 'is_proctor', 'is_active')
-    search_fields = ('name',)
+    search_fields = ('name', 'staff_id')
 
 
 @admin.register(Course)
@@ -75,9 +75,3 @@ class StudentProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'student_id', 'class_obj', 'first_login')
     search_fields = ('user__username', 'student_id')
     list_filter = ('class_obj', 'first_login')
-
-@admin.register(LecturerProfile)
-class LecturerProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'lecturer_id', 'department', 'first_login')
-    search_fields = ('user__username', 'lecturer_id')
-    list_filter = ('department', 'first_login')

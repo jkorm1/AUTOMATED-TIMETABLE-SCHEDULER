@@ -2,6 +2,13 @@ from django.core.management.base import BaseCommand
 from Timetable.models import College, Department, Class, Course, Room, Lecturer, Building, RoomType, LabType, CourseType
 from django.db import transaction
 import random
+from Users.models import User, LecturerProfile
+from django.contrib.auth.models import BaseUserManager
+from django.utils.crypto import get_random_string
+
+def make_random_password(length=8):
+    allowed_chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    return get_random_string(length, allowed_chars)
 
 class Command(BaseCommand):
     help = 'Clear and seed the database with realistic KNUST data for scheduling.'
@@ -149,7 +156,7 @@ class Command(BaseCommand):
                 course.classes.set([course_class])
                 courses[c['code']] = course
 
-            # Lecturers (realistic names, some teach in both colleges)
+            # Lecturers (realistic names, some teach in multiple departments)
             lecturer_data = [
                 {'name': 'Dr. Kwame Mensah', 'departments': ['Department of Computer Science', 'Department of Computer Engineering']},
                 {'name': 'Prof. Akosua Boateng', 'departments': ['Department of Mathematics']},
@@ -173,19 +180,46 @@ class Command(BaseCommand):
                 {'name': 'Dr. Richmond Amponsah', 'departments': ['Department of Electrical Engineering']},
             ]
             lecturers = {}
+            staff_id_counter = 100001
             for l in lecturer_data:
-                for dept_name in l['departments']:
-                    dept = departments[dept_name]
-                    lecturer, _ = Lecturer.objects.get_or_create(
-                        name=l['name'], department=dept, is_active=True, max_courses=4
+                staff_id = str(staff_id_counter).zfill(6)
+                staff_id_counter += 1
+                # Assign the first department as the primary department
+                primary_dept = departments[l['departments'][0]]
+                lecturer, _ = Lecturer.objects.get_or_create(
+                    name=l['name'], department=primary_dept, is_active=True, max_courses=4, staff_id=staff_id
+                )
+                lecturers[l['name']] = lecturer
+
+                # --- Create User and LecturerProfile for each lecturer ---
+                email = f"{l['name'].replace(' ', '').lower()}@knust.edu.gh"
+                password = make_random_password()
+                user, created = User.objects.get_or_create(
+                    email=email,
+                    defaults={
+                        'username': email.split('@')[0],
+                        'is_lecturer': True,
+                        'first_name': l['name'].split()[0],
+                        'last_name': ' '.join(l['name'].split()[1:]),
+                    }
+                )
+                if created:
+                    user.set_password(password)
+                    user.save()
+                    LecturerProfile.objects.get_or_create(
+                        user=user,
+                        staff_id=staff_id,
+                        department=primary_dept.name
                     )
-                    lecturers[(l['name'], dept_name)] = lecturer
+                    self.stdout.write(self.style.SUCCESS(f"Lecturer user created: {email} / {password} / Staff ID: {staff_id}"))
+                else:
+                    self.stdout.write(self.style.WARNING(f"Lecturer user already exists: {email}"))
 
             # Assign lecturers to courses (2 per course, prefer department lecturers, allow cross-college)
             for c in course_data:
-                dept_lects = [lecturers[(l['name'], c['department'].name)] for l in lecturer_data if c['department'].name in l['departments']]
+                dept_lects = [lecturers[l['name']] for l in lecturer_data if c['department'].name in l['departments']]
                 # Add cross-college lecturer if available
-                possible_lects = dept_lects + [lecturers[(l['name'], d)] for l in lecturer_data for d in l['departments'] if d != c['department'].name][:2]
+                possible_lects = dept_lects + [lecturers[l['name']] for l in lecturer_data if c['department'].name not in l['departments']][:2]
                 course = courses[c['code']]
                 course.lecturers.set(possible_lects[:2])
 
