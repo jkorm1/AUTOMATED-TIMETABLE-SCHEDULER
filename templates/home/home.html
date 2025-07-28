@@ -8,4 +8,95 @@
     <h1>Welcome to the Timetable Scheduler</h1>
     <p class="lead">Automate and manage your academic schedules with ease.</p>
 </div>
+
+<div class="row mt-5">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar"></i>
+                    Regular Timetables
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Generate and view regular class timetables for teaching schedules.</p>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'generate' %}" class="btn btn-primary">
+                        <i class="fas fa-magic"></i>
+                        Generate New Timetable
+                    </a>
+                    <a href="{% url 'view_timetable' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-eye"></i>
+                        View Timetables
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-alt"></i>
+                    Exam Schedules
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Create exam timetables with invigilator assignments for examination periods.</p>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'generate_exam_schedule' %}" class="btn btn-warning">
+                        <i class="fas fa-calendar-alt"></i>
+                        Generate Exam Timetable
+                    </a>
+                    <a href="{% url 'exam_timetable_hub' %}" class="btn btn-outline-warning">
+                        <i class="fas fa-eye"></i>
+                        View Exam Timetables
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i>
+                    Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{% url 'rooms' %}" class="btn btn-outline-secondary w-100 mb-2">
+                            <i class="fas fa-building"></i>
+                            Manage Rooms
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'classes' %}" class="btn btn-outline-secondary w-100 mb-2">
+                            <i class="fas fa-users"></i>
+                            Manage Classes
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'lecturers' %}" class="btn btn-outline-secondary w-100 mb-2">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                            Manage Lecturers
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'courses' %}" class="btn btn-outline-secondary w-100 mb-2">
+                            <i class="fas fa-book"></i>
+                            Manage Courses
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

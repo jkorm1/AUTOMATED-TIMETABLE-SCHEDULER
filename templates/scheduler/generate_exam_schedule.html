@@ -1,0 +1,228 @@
+{% extends 'home/base.html' %}
+{% load static %}
+{% load dict_extras %}
+
+{% block title %}Exam Timetable Management{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-calendar-alt"></i>
+                Exam Timetable Management
+            </h2>
+            
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs" id="examTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="generate-tab" data-bs-toggle="tab" data-bs-target="#generate" type="button" role="tab">
+                        <i class="fas fa-magic"></i> Generate Exam Schedule
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="view-tab" data-bs-toggle="tab" data-bs-target="#view" type="button" role="tab">
+                        <i class="fas fa-list"></i> View Exam Schedules
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="invigilation-tab" data-bs-toggle="tab" data-bs-target="#invigilation" type="button" role="tab">
+                        <i class="fas fa-user-tie"></i> Invigilation Assignments
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="setup-tab" data-bs-toggle="tab" data-bs-target="#setup" type="button" role="tab">
+                        <i class="fas fa-cog"></i> Setup & Requirements
+                    </button>
+                </li>
+            </ul>
+            
+            <!-- Tab Content -->
+            <div class="tab-content" id="examTabsContent">
+                <!-- Generate Tab -->
+                <div class="tab-pane fade show active" id="generate" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Generate New Exam Schedule</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" id="examScheduleForm">
+                                {% csrf_token %}
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="college" class="form-label">Select College:</label>
+                                            <select name="college_id" id="college" class="form-control" required>
+                                                <option value="">-- Select College --</option>
+                                                {% for college in colleges %}
+                                                    <option value="{{ college.id }}" {% if selected_college_id == college.id|stringformat:"s" %}selected{% endif %}>
+                                                        {{ college.name }}
+                                                        {% if exam_schedule_status and exam_schedule_status|dict_get:college.id %}
+                                                            <span class="badge bg-primary">(Exam Schedule exists)</span>
+                                                        {% else %}
+                                                            <span class="badge bg-dark">(No exam schedule yet)</span>
+                                                        {% endif %}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="exam_start_date" class="form-label">Exam Start Date (Optional):</label>
+                                            <input type="date" name="exam_start_date" id="exam_start_date" class="form-control" 
+                                                   value="{{ selected_exam_start_date|default:'' }}"
+                                                   placeholder="Leave empty to start from next Monday">
+                                            <small class="form-text text-muted">
+                                                The system will automatically generate 3 weeks of exam dates starting from this date. 
+                                                If not specified, it will start from the next Monday.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <button type="submit" class="btn btn-primary btn-lg" id="generateBtn">
+                                        <i class="fas fa-magic"></i>
+                                        Generate Exam Schedule
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- View Tab -->
+                <div class="tab-pane fade" id="view" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">View Exam Schedules</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label for="date_filter" class="form-label">Filter by Date:</label>
+                                    <select id="date_filter" class="form-select" onchange="filterByDate()">
+                                        <option value="">All Dates</option>
+                                        <!-- Will be populated by JavaScript -->
+                                    </select>
+                                </div>
+                                <div class="col-md-8">
+                                    <a href="{% url 'exam_schedule_list' %}" class="btn btn-outline-primary float-end">
+                                        <i class="fas fa-external-link-alt"></i>
+                                        Open Full View
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <div id="exam_schedules_preview" class="mt-3">
+                                <div class="text-center py-4">
+                                    <i class="fas fa-calendar-times fa-2x text-muted mb-3"></i>
+                                    <p class="text-muted">Click "Open Full View" to see exam schedules</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Invigilation Tab -->
+                <div class="tab-pane fade" id="invigilation" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Invigilation Assignments</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <p class="text-muted">View and manage invigilator assignments for all exam sessions.</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <a href="{% url 'invigilation_assignments' %}" class="btn btn-outline-info float-end">
+                                        <i class="fas fa-external-link-alt"></i>
+                                        Open Full View
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <div id="invigilation_preview" class="mt-3">
+                                <div class="text-center py-4">
+                                    <i class="fas fa-user-tie fa-2x text-muted mb-3"></i>
+                                    <p class="text-muted">Click "Open Full View" to see invigilation assignments</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Setup Tab -->
+                <div class="tab-pane fade" id="setup" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Setup & Requirements</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>What the algorithm does:</h6>
+                                    <ul>
+                                        <li>Schedules exams for all courses in the selected college</li>
+                                        <li>Assigns appropriate rooms based on class size</li>
+                                        <li>Ensures no conflicts between classes and rooms</li>
+                                        <li>Assigns multiple invigilators per exam session</li>
+                                        <li>Balances invigilator workload across all exams</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Requirements (Setup in Admin):</h6>
+                                    <ul>
+                                        <li><strong>Exam Dates:</strong> Create exam dates in Timetable → Exam dates</li>
+                                        <li><strong>Time Slots:</strong> Create time slots with "Is exam slot" checked</li>
+                                        <li><strong>Proctors:</strong> Mark lecturers as proctors (Is proctor = True)</li>
+                                        <li><strong>Rooms:</strong> Ensure rooms have sufficient capacity</li>
+                                    </ul>
+                                    
+                                    <div class="mt-3">
+                                        <a href="/admin/" class="btn btn-outline-secondary">
+                                            <i class="fas fa-cog"></i>
+                                            Go to Admin Panel
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Tab functionality is handled by Bootstrap
+// You can add additional JavaScript here for dynamic content loading
+
+// Debug form submission
+document.getElementById('examScheduleForm').addEventListener('submit', function(e) {
+    console.log('Form submitted!');
+    console.log('College ID:', document.getElementById('college').value);
+    console.log('Exam Start Date:', document.getElementById('exam_start_date').value);
+    
+    // Show loading state
+    document.getElementById('generateBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+    document.getElementById('generateBtn').disabled = true;
+});
+
+// Debug form values on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded');
+    console.log('Selected college ID:', document.getElementById('college').value);
+    console.log('Selected exam start date:', document.getElementById('exam_start_date').value);
+    
+    // Check if there was an error
+    var errorMessages = document.querySelectorAll('.alert-danger');
+    if (errorMessages.length > 0) {
+        console.log('Error occurred, preserving form values');
+    }
+});
+</script>
+{% endblock %} 

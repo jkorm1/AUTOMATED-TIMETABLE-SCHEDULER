@@ -1,0 +1,151 @@
+{% extends 'home/base.html' %}
+{% block title %}View Exam Timetable{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-calendar-check"></i>
+                View Exam Timetable
+            </h2>
+
+            <!-- Exam Timetables Section -->
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-graduation-cap"></i>
+                        Exam Timetables
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="college_id" class="form-label">
+                                    <i class="fas fa-university"></i>
+                                    Select College:
+                                </label>
+                                <select name="college_id" id="college_id" class="form-select" required>
+                                    <option value="">-- Select College --</option>
+                                    {% for college in colleges %}
+                                        <option value="{{ college.id }}">{{ college.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <a id="college_link" class="btn btn-warning mt-2" href="#">
+                                <i class="fas fa-eye"></i>
+                                View College Exam Timetable
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="class_id" class="form-label">
+                                    <i class="fas fa-users"></i>
+                                    Select Class:
+                                </label>
+                                <select name="class_id" id="class_id" class="form-select" required>
+                                    <option value="">-- Select Class --</option>
+                                    {% for class in classes %}
+                                        <option value="{{ class.id }}">{{ class.code }} - {{ class.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <a id="class_link" class="btn btn-success mt-2" href="#">
+                                <i class="fas fa-eye"></i>
+                                View Class Exam Timetable
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="lecturer_id" class="form-label">
+                                    <i class="fas fa-user-tie"></i>
+                                    Select Lecturer (Proctor):
+                                </label>
+                                <select name="lecturer_id" id="lecturer_id" class="form-select" required>
+                                    <option value="">-- Select Lecturer --</option>
+                                    {% for lecturer in lecturers %}
+                                        <option value="{{ lecturer.id }}">{{ lecturer.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <a id="lecturer_link" class="btn btn-info mt-2" href="#">
+                                <i class="fas fa-eye"></i>
+                                View Lecturer Invigilation Schedule
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Links Section -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-link"></i>
+                        Quick Links
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Exam Management:</h6>
+                            <ul class="list-unstyled">
+                                <li><a href="{% url 'generate_exam_schedule' %}" class="btn btn-sm btn-outline-primary mb-1">
+                                    <i class="fas fa-magic"></i> Generate Exam Schedule
+                                </a></li>
+                                <li><a href="{% url 'exam_schedule_list' %}" class="btn btn-sm btn-outline-secondary mb-1">
+                                    <i class="fas fa-list"></i> View All Exam Schedules
+                                </a></li>
+                                <li><a href="{% url 'invigilation_assignments' %}" class="btn btn-sm btn-outline-info mb-1">
+                                    <i class="fas fa-user-tie"></i> Invigilation Assignments
+                                </a></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Regular Timetables:</h6>
+                            <ul class="list-unstyled">
+                                <li><a href="{% url 'view_timetable' %}" class="btn btn-sm btn-outline-success mb-1">
+                                    <i class="fas fa-calendar"></i> View Regular Timetables
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('college_link').onclick = function() {
+    var id = document.getElementById('college_id').value;
+    if (id) {
+        window.location.href = "{% url 'college_exam_timetable' 0 %}".replace('0', id);
+    } else {
+        alert('Please select a college first.');
+    }
+    return false;
+};
+
+document.getElementById('class_link').onclick = function() {
+    var id = document.getElementById('class_id').value;
+    if (id) {
+        window.location.href = "{% url 'class_exam_timetable' 0 %}".replace('0', id);
+    } else {
+        alert('Please select a class first.');
+    }
+    return false;
+};
+
+document.getElementById('lecturer_link').onclick = function() {
+    var id = document.getElementById('lecturer_id').value;
+    if (id) {
+        window.location.href = "{% url 'lecturer_exam_timetable' 0 %}".replace('0', id);
+    } else {
+        alert('Please select a lecturer first.');
+    }
+    return false;
+};
+</script>
+{% endblock %} 

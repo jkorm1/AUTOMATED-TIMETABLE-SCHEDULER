@@ -1,0 +1,174 @@
+{% extends 'home/base.html' %}
+{% load static %}
+
+{% block title %}Generated Exam Schedule{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% if accept_mode %}
+                <form method="post" class="mb-4">
+                    {% csrf_token %}
+                    <button type="submit" name="accept" class="btn btn-success btn-lg">
+                        <i class="fas fa-check"></i>
+                        Accept Exam Schedule
+                    </button>
+                </form>
+            {% endif %}
+
+            {% if selected_college %}
+                <h2>Generated Exam Schedule for {{ selected_college.name }}</h2>
+            {% else %}
+                <h2>Generated Exam Schedule</h2>
+            {% endif %}
+
+            {% if best_exam_schedule %}
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calendar-check"></i>
+                            Exam Schedule Preview
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Week</th>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Course</th>
+                                        <th>Class</th>
+                                        <th>Room</th>
+                                        <th>Duration</th>
+                                        <th>Invigilators</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for exam in best_exam_schedule %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-info">Week {{ exam.week }}</span>
+                                        </td>
+                                        <td>{{ exam.date }}</td>
+                                        <td>{{ exam.start_time }} - {{ exam.end_time }}</td>
+                                        <td>
+                                            <strong>{{ exam.course }}</strong>
+                                        </td>
+                                        <td>{{ exam.class }}</td>
+                                        <td>{{ exam.room }}</td>
+                                        <td>{{ exam.duration }} min</td>
+                                        <td>
+                                            <span class="badge {% if exam.invigilators|length >= exam.required_invigilators %}bg-success{% else %}bg-warning{% endif %}">
+                                                {{ exam.invigilators|length }}/{{ exam.required_invigilators }}
+                                            </span>
+                                            <br>
+                                            <small class="text-muted">
+                                                {% for invigilator in exam.invigilators %}
+                                                    {{ invigilator }}{% if not forloop.last %}, {% endif %}
+                                                {% endfor %}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            {% if exam.invigilators|length >= exam.required_invigilators %}
+                                                <span class="badge bg-success">Ready</span>
+                                            {% else %}
+                                                <span class="badge bg-warning">Insufficient Invigilators</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-bar"></i>
+                            Schedule Summary
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="text-primary">{{ best_exam_schedule|length }}</h4>
+                                    <p class="text-muted">Total Exams</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="text-success">
+                                        {% for exam in best_exam_schedule %}
+                                            {% if exam.invigilators|length >= exam.required_invigilators %}
+                                                {% if forloop.first %}{% endif %}{{ forloop.counter }}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </h4>
+                                    <p class="text-muted">Properly Staffed</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="text-warning">
+                                        {% for exam in best_exam_schedule %}
+                                            {% if exam.invigilators|length < exam.required_invigilators %}
+                                                {% if forloop.first %}{% endif %}{{ forloop.counter }}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </h4>
+                                    <p class="text-muted">Need More Invigilators</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="text-info">
+                                        {% for exam in best_exam_schedule %}
+                                            {% for invigilator in exam.invigilators %}
+                                                {% if forloop.first %}{% endif %}{{ forloop.counter }}
+                                            {% endfor %}
+                                        {% endfor %}
+                                    </h4>
+                                    <p class="text-muted">Total Assignments</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No exam schedule generated</h5>
+                        <p class="text-muted">Please try generating the exam schedule again.</p>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="mt-4">
+                <a href="{% url 'generate_exam_schedule' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Exam Schedule Generation
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
+ 
+ 

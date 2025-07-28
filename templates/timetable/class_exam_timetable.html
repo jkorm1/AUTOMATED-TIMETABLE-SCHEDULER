@@ -1,0 +1,139 @@
+{% extends 'home/base.html' %}
+{% load dict_extras %}
+{% block title %}Class Exam Timetable - {{ class_obj.code }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Navigation -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'exam_timetable_hub' %}">Exam Timetables</a></li>
+                    <li class="breadcrumb-item active">{{ class_obj.code }}</li>
+                </ol>
+            </nav>
+
+            <h2 class="mb-4">
+                <i class="fas fa-users"></i>
+                {{ class_obj.code }} - {{ class_obj.name }} - Exam Timetable
+            </h2>
+
+            <!-- Class Information -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        Class Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Class Code:</strong> {{ class_obj.code }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Class Name:</strong> {{ class_obj.name }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Department:</strong> {{ class_obj.department.name }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Class Size:</strong> {{ class_obj.size }} students
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Class Selection -->
+            <div class="mb-4">
+                <form class="form-inline d-flex align-items-center">
+                    <label for="class_select" class="me-2">Switch Class:</label>
+                    <select id="class_select" class="form-control me-2">
+                        {% for other_class in classes %}
+                            <option value="{{ other_class.id }}" {% if other_class.id == class_obj.id %}selected{% endif %}>
+                                {{ other_class.code }} - {{ other_class.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="btn btn-success" onclick="window.location.href='{% url 'class_exam_timetable' 0 %}'.replace('0', document.getElementById('class_select').value)">Go</button>
+                </form>
+            </div>
+
+            <!-- Exam Schedule Grid -->
+            {% if exam_dates and time_slots %}
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calendar-check"></i>
+                            Exam Schedule Grid
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Date / Time</th>
+                                        {% for time_slot in time_slots %}
+                                            <th>{{ time_slot }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for date in exam_dates %}
+                                    <tr>
+                                        <th class="bg-light">
+                                            <strong>{{ date|date:"l, M j" }}</strong><br>
+                                            <small class="text-muted">{{ date|date:"Y" }}</small>
+                                        </th>
+                                        {% for time_slot in time_slots %}
+                                        <td style="min-width: 150px; vertical-align: top;">
+                                            {% for exam in exam_grid|dict_chain_get:date|dict_chain_get:time_slot %}
+                                                <div class="border border-success rounded p-2 mb-2" style="background-color: #d1edff;">
+                                                    <div><strong>{{ exam.course }}</strong></div>
+                                                    <div class="text-info">{{ exam.room }}</div>
+                                                    {% if exam.invigilators %}
+                                                        <div class="text-success">
+                                                            <small>
+                                                                <i class="fas fa-user-tie"></i>
+                                                                {% for invigilator in exam.invigilators %}
+                                                                    {{ invigilator }}{% if not forloop.last %}, {% endif %}
+                                                                {% endfor %}
+                                                            </small>
+                                                        </div>
+                                                    {% endif %}
+                                                    <a href="{% url 'exam_schedule_detail' exam.schedule_id %}" 
+                                                       class="btn btn-sm btn-outline-success mt-1">
+                                                        <i class="fas fa-eye"></i> Details
+                                                    </a>
+                                                </div>
+                                                {% if not forloop.last %}<hr class="my-1">{% endif %}
+                                            {% empty %}
+                                                <span class="text-secondary">-</span>
+                                            {% endfor %}
+                                        </td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No exam schedules found for {{ class_obj.code }}</h5>
+                        <p class="text-muted">No exam schedules have been generated for this class yet.</p>
+                        <a href="{% url 'generate_exam_schedule' %}" class="btn btn-success">
+                            <i class="fas fa-magic"></i> Generate Exam Schedule
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

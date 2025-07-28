@@ -178,6 +178,67 @@ class ProctorAssignment(models.Model):
         return f"{self.proctor.name} on {self.exam_date.date}"
 
 
+class ExamSchedule(models.Model):
+    """Exam schedule for classes"""
+    exam_date = models.ForeignKey(ExamDate, on_delete=models.CASCADE)
+    time_slot = models.ForeignKey(TimeSlot, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    program_class = models.ForeignKey(Class, on_delete=models.CASCADE)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE)
+    invigilators = models.ManyToManyField(Lecturer, related_name='exam_assignments', limit_choices_to={'is_proctor': True})
+    exam_duration = models.PositiveIntegerField(default=120)  # Duration in minutes
+    is_scheduled = models.BooleanField(default=False)
+    
+    class Meta:
+        unique_together = ('exam_date', 'time_slot', 'course', 'program_class')
+        ordering = ['exam_date', 'time_slot']
+
+    def __str__(self):
+        return f"{self.course.code} - {self.program_class.code} on {self.exam_date.date} at {self.time_slot}"
+
+    @property
+    def invigilators_count(self):
+        return self.invigilators.count()
+
+    @property
+    def required_invigilators(self):
+        """Calculate required invigilators based on room capacity and class size"""
+        student_count = self.program_class.size
+        room_capacity = self.room.capacity
+        
+        # Basic rule: 1 invigilator per 50 students, minimum 2
+        if student_count <= 50:
+            return max(2, self.room.proctors_required)
+        elif student_count <= 100:
+            return max(3, self.room.proctors_required)
+        else:
+            return max(4, self.room.proctors_required)
+
+    @property
+    def is_adequately_staffed(self):
+        """Check if enough invigilators are assigned"""
+        return self.invigilators_count >= self.required_invigilators
+
+
+class InvigilationAssignment(models.Model):
+    """Detailed assignment of invigilators to specific exam sessions"""
+    exam_schedule = models.ForeignKey(ExamSchedule, on_delete=models.CASCADE)
+    invigilator = models.ForeignKey(Lecturer, on_delete=models.CASCADE, limit_choices_to={'is_proctor': True})
+    role = models.CharField(max_length=20, choices=[
+        ('CHIEF', 'Chief Invigilator'),
+        ('ASSISTANT', 'Assistant Invigilator'),
+        ('RESERVE', 'Reserve Invigilator'),
+    ], default='ASSISTANT')
+    is_confirmed = models.BooleanField(default=False)
+    
+    class Meta:
+        unique_together = ('exam_schedule', 'invigilator')
+        ordering = ['exam_schedule', 'role', 'invigilator__name']
+
+    def __str__(self):
+        return f"{self.invigilator.name} - {self.role} for {self.exam_schedule}"
+
+
 class LectureSchedule(models.Model):
     day = models.CharField(max_length=20)
     period = models.CharField(max_length=20)

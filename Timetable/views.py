@@ -2,7 +2,7 @@ from django.shortcuts import render,HttpResponse,redirect
 from django.shortcuts import get_object_or_404
 from .models import Room,Class,Lecturer,Course,College
 from django.http import Http404
-from .models import LectureSchedule
+from .models import LectureSchedule, ExamSchedule, InvigilationAssignment, ExamDate
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import Group
 import random
@@ -368,6 +368,304 @@ def add_user_frontend(request):
             generated = {'type': 'Lecturer', 'username': username, 'email': email, 'password': password}
         return render(request, 'timetable/add_user_frontend.html', {'classes': classes, 'departments': departments, 'generated': generated})
     return render(request, 'timetable/add_user_frontend.html', {'classes': classes, 'departments': departments})
+
+
+
+
+@staff_member_required
+def exam_schedule_list(request):
+    """Display all exam schedules"""
+    exam_dates = ExamDate.objects.all().order_by('date')
+    selected_date = request.GET.get('date')
+    
+    if selected_date:
+        try:
+            # Parse the date from YYYY-MM-DD format
+            from datetime import datetime
+            parsed_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+            
+            exam_schedules = ExamSchedule.objects.filter(
+                exam_date__date=parsed_date
+            ).select_related('course', 'program_class', 'room', 'exam_date', 'time_slot').prefetch_related('invigilators')
+        except ValueError:
+            # If date parsing fails, show all schedules
+            exam_schedules = ExamSchedule.objects.all().select_related(
+                'course', 'program_class', 'room', 'exam_date', 'time_slot'
+            ).prefetch_related('invigilators')
+    else:
+        exam_schedules = ExamSchedule.objects.all().select_related(
+            'course', 'program_class', 'room', 'exam_date', 'time_slot'
+        ).prefetch_related('invigilators')
+    
+    return render(request, 'timetable/exam_schedule_list.html', {
+        'exam_dates': exam_dates,
+        'exam_schedules': exam_schedules,
+        'selected_date': selected_date,
+    })
+
+
+@staff_member_required
+def invigilation_assignments(request):
+    """Display invigilation assignments"""
+    assignments = InvigilationAssignment.objects.select_related(
+        'invigilator', 'exam_schedule__course', 'exam_schedule__program_class', 
+        'exam_schedule__room', 'exam_schedule__exam_date', 'exam_schedule__time_slot'
+    ).order_by('exam_schedule__exam_date__date', 'exam_schedule__time_slot__start_time')
+    
+    # Group by invigilator
+    invigilator_assignments = {}
+    for assignment in assignments:
+        invigilator = assignment.invigilator
+        if invigilator not in invigilator_assignments:
+            invigilator_assignments[invigilator] = []
+        invigilator_assignments[invigilator].append(assignment)
+    
+    return render(request, 'timetable/invigilation_assignments.html', {
+        'invigilator_assignments': invigilator_assignments,
+    })
+
+
+def lecturer_invigilation_schedule(request, lecturer_id):
+    """Display invigilation schedule for a specific lecturer"""
+    try:
+        lecturer = Lecturer.objects.get(id=lecturer_id, is_proctor=True)
+    except Lecturer.DoesNotExist:
+        raise Http404("Lecturer not found or not a proctor")
+    
+    assignments = InvigilationAssignment.objects.filter(
+        invigilator=lecturer
+    ).select_related(
+        'exam_schedule__course', 'exam_schedule__program_class', 
+        'exam_schedule__room', 'exam_schedule__exam_date', 'exam_schedule__time_slot'
+    ).order_by('exam_schedule__exam_date__date', 'exam_schedule__time_slot__start_time')
+    
+    return render(request, 'timetable/lecturer_invigilation_schedule.html', {
+        'lecturer': lecturer,
+        'assignments': assignments,
+    })
+
+
+@staff_member_required
+def exam_schedule_detail(request, schedule_id):
+    """Display detailed view of an exam schedule"""
+    schedule = get_object_or_404(
+        ExamSchedule.objects.select_related(
+            'course', 'program_class', 'room', 'exam_date', 'time_slot'
+        ).prefetch_related('invigilators'),
+        id=schedule_id
+    )
+    
+    assignments = InvigilationAssignment.objects.filter(
+        exam_schedule=schedule
+    ).select_related('invigilator').order_by('role', 'invigilator__name')
+    
+    return render(request, 'timetable/exam_schedule_detail.html', {
+        'schedule': schedule,
+        'assignments': assignments,
+    })
+
+
+# Exam Timetable Viewing Functions
+def exam_timetable_hub(request):
+    """Hub for viewing exam timetables by college, class, or lecturer"""
+    colleges = College.objects.all()
+    classes = Class.objects.all()
+    lecturers = Lecturer.objects.filter(is_proctor=True)  # Only proctors for exam schedules
+    return render(request, 'timetable/exam_timetable_hub.html', {
+        'colleges': colleges,
+        'classes': classes,
+        'lecturers': lecturers,
+    })
+
+
+def college_exam_timetable(request, college_id):
+    """Display exam timetable for a specific college"""
+    try:
+        college = College.objects.get(id=college_id)
+    except College.DoesNotExist:
+        raise Http404("College not found")
+    
+    colleges = College.objects.all()
+    
+    # Get all exam schedules for classes in this college
+    class_ids = list(Class.objects.filter(department__college=college).values_list('id', flat=True))
+    exam_schedules = ExamSchedule.objects.filter(
+        program_class_id__in=class_ids
+    ).select_related(
+        'course', 'program_class', 'room', 'exam_date', 'time_slot'
+    ).prefetch_related('invigilators').order_by('exam_date__date', 'time_slot__start_time')
+    
+    # Create grid structure: dates as rows, time slots as columns
+    exam_dates = []
+    time_slots = []
+    exam_grid = {}
+    
+    # Collect all unique dates and time slots
+    for schedule in exam_schedules:
+        date_key = schedule.exam_date.date
+        time_key = f"{schedule.time_slot.start_time.strftime('%H:%M')} - {schedule.time_slot.end_time.strftime('%H:%M')}"
+        
+        if date_key not in exam_dates:
+            exam_dates.append(date_key)
+        if time_key not in time_slots:
+            time_slots.append(time_key)
+    
+    # Sort dates and time slots
+    exam_dates.sort()
+    time_slots.sort()
+    
+    # Build grid
+    for date in exam_dates:
+        exam_grid[date] = {}
+        for time_slot in time_slots:
+            exam_grid[date][time_slot] = []
+    
+    # Populate grid with exam schedules
+    for schedule in exam_schedules:
+        date_key = schedule.exam_date.date
+        time_key = f"{schedule.time_slot.start_time.strftime('%H:%M')} - {schedule.time_slot.end_time.strftime('%H:%M')}"
+        
+        exam_grid[date_key][time_key].append({
+            'course': schedule.course.code,
+            'class': schedule.program_class.code,
+            'room': schedule.room.code,
+            'invigilators': [inv.name for inv in schedule.invigilators.all()],
+            'schedule_id': schedule.id
+        })
+    
+    return render(request, 'timetable/college_exam_timetable.html', {
+        'college': college,
+        'colleges': colleges,
+        'exam_dates': exam_dates,
+        'time_slots': time_slots,
+        'exam_grid': exam_grid,
+    })
+
+
+def class_exam_timetable(request, class_id):
+    """Display exam timetable for a specific class"""
+    try:
+        class_obj = Class.objects.get(id=class_id)
+    except Class.DoesNotExist:
+        raise Http404("Class not found")
+    
+    classes = Class.objects.all()
+    
+    # Get exam schedules for this specific class
+    exam_schedules = ExamSchedule.objects.filter(
+        program_class=class_obj
+    ).select_related(
+        'course', 'room', 'exam_date', 'time_slot'
+    ).prefetch_related('invigilators').order_by('exam_date__date', 'time_slot__start_time')
+    
+    # Create grid structure: dates as rows, time slots as columns
+    exam_dates = []
+    time_slots = []
+    exam_grid = {}
+    
+    # Collect all unique dates and time slots
+    for schedule in exam_schedules:
+        date_key = schedule.exam_date.date
+        time_key = f"{schedule.time_slot.start_time.strftime('%H:%M')} - {schedule.time_slot.end_time.strftime('%H:%M')}"
+        
+        if date_key not in exam_dates:
+            exam_dates.append(date_key)
+        if time_key not in time_slots:
+            time_slots.append(time_key)
+    
+    # Sort dates and time slots
+    exam_dates.sort()
+    time_slots.sort()
+    
+    # Build grid
+    for date in exam_dates:
+        exam_grid[date] = {}
+        for time_slot in time_slots:
+            exam_grid[date][time_slot] = []
+    
+    # Populate grid with exam schedules
+    for schedule in exam_schedules:
+        date_key = schedule.exam_date.date
+        time_key = f"{schedule.time_slot.start_time.strftime('%H:%M')} - {schedule.time_slot.end_time.strftime('%H:%M')}"
+        
+        exam_grid[date_key][time_key].append({
+            'course': schedule.course.code,
+            'room': schedule.room.code,
+            'invigilators': [inv.name for inv in schedule.invigilators.all()],
+            'schedule_id': schedule.id
+        })
+    
+    return render(request, 'timetable/class_exam_timetable.html', {
+        'class_obj': class_obj,
+        'classes': classes,
+        'exam_dates': exam_dates,
+        'time_slots': time_slots,
+        'exam_grid': exam_grid,
+    })
+
+
+def lecturer_exam_timetable(request, lecturer_id):
+    """Display exam timetable for a specific lecturer (invigilation duties)"""
+    try:
+        lecturer = Lecturer.objects.get(id=lecturer_id, is_proctor=True)
+    except Lecturer.DoesNotExist:
+        raise Http404("Lecturer not found or not a proctor")
+    
+    lecturers = Lecturer.objects.filter(is_proctor=True)
+    
+    # Get exam schedules where this lecturer is assigned as invigilator
+    exam_schedules = ExamSchedule.objects.filter(
+        invigilators=lecturer
+    ).select_related(
+        'course', 'program_class', 'room', 'exam_date', 'time_slot'
+    ).prefetch_related('invigilators').order_by('exam_date__date', 'time_slot__start_time')
+    
+    # Create grid structure: dates as rows, time slots as columns
+    exam_dates = []
+    time_slots = []
+    exam_grid = {}
+    
+    # Collect all unique dates and time slots
+    for schedule in exam_schedules:
+        date_key = schedule.exam_date.date
+        time_key = f"{schedule.time_slot.start_time.strftime('%H:%M')} - {schedule.time_slot.end_time.strftime('%H:%M')}"
+        
+        if date_key not in exam_dates:
+            exam_dates.append(date_key)
+        if time_key not in time_slots:
+            time_slots.append(time_key)
+    
+    # Sort dates and time slots
+    exam_dates.sort()
+    time_slots.sort()
+    
+    # Build grid
+    for date in exam_dates:
+        exam_grid[date] = {}
+        for time_slot in time_slots:
+            exam_grid[date][time_slot] = []
+    
+    # Populate grid with exam schedules
+    for schedule in exam_schedules:
+        date_key = schedule.exam_date.date
+        time_key = f"{schedule.time_slot.start_time.strftime('%H:%M')} - {schedule.time_slot.end_time.strftime('%H:%M')}"
+        
+        exam_grid[date_key][time_key].append({
+            'course': schedule.course.code,
+            'class': schedule.program_class.code,
+            'room': schedule.room.code,
+            'role': 'Invigilator',
+            'schedule_id': schedule.id
+        })
+    
+    return render(request, 'timetable/lecturer_exam_timetable.html', {
+        'lecturer': lecturer,
+        'lecturers': lecturers,
+        'exam_dates': exam_dates,
+        'time_slots': time_slots,
+        'exam_grid': exam_grid,
+    })
+
 
 
 

@@ -1,0 +1,148 @@
+{% extends 'home/base.html' %}
+{% load dict_extras %}
+{% block title %}Lecturer Invigilation Schedule - {{ lecturer.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Navigation -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'exam_timetable_hub' %}">Exam Timetables</a></li>
+                    <li class="breadcrumb-item active">{{ lecturer.name }}</li>
+                </ol>
+            </nav>
+
+            <h2 class="mb-4">
+                <i class="fas fa-user-tie"></i>
+                {{ lecturer.name }} - Invigilation Schedule
+            </h2>
+
+            <!-- Lecturer Information -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        Lecturer Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Name:</strong> {{ lecturer.name }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Department:</strong> {{ lecturer.department.name }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Staff ID:</strong> {{ lecturer.staff_id|default:"Not assigned" }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Status:</strong> 
+                            {% if lecturer.is_proctor %}
+                                <span class="badge bg-success">Proctor</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Not a Proctor</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lecturer Selection -->
+            <div class="mb-4">
+                <form class="form-inline d-flex align-items-center">
+                    <label for="lecturer_select" class="me-2">Switch Lecturer:</label>
+                    <select id="lecturer_select" class="form-control me-2">
+                        {% for other_lecturer in lecturers %}
+                            <option value="{{ other_lecturer.id }}" {% if other_lecturer.id == lecturer.id %}selected{% endif %}>
+                                {{ other_lecturer.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="btn btn-info" onclick="window.location.href='{% url 'lecturer_exam_timetable' 0 %}'.replace('0', document.getElementById('lecturer_select').value)">Go</button>
+                </form>
+            </div>
+
+            <!-- Invigilation Schedule Grid -->
+            {% if exam_dates and time_slots %}
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calendar-check"></i>
+                            Invigilation Schedule Grid
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Date / Time</th>
+                                        {% for time_slot in time_slots %}
+                                            <th>{{ time_slot }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for date in exam_dates %}
+                                    <tr>
+                                        <th class="bg-light">
+                                            <strong>{{ date|date:"l, M j" }}</strong><br>
+                                            <small class="text-muted">{{ date|date:"Y" }}</small>
+                                        </th>
+                                        {% for time_slot in time_slots %}
+                                        <td style="min-width: 150px; vertical-align: top;">
+                                            {% for exam in exam_grid|dict_chain_get:date|dict_chain_get:time_slot %}
+                                                <div class="border border-info rounded p-2 mb-2" style="background-color: #d1ecf1;">
+                                                    <div><strong>{{ exam.course }}</strong></div>
+                                                    <div class="text-muted">{{ exam.class }}</div>
+                                                    <div class="text-info">{{ exam.room }}</div>
+                                                    <div class="text-primary">
+                                                        <small>
+                                                            <i class="fas fa-user-tie"></i>
+                                                            <span class="badge bg-info">{{ exam.role }}</span>
+                                                        </small>
+                                                    </div>
+                                                    <a href="{% url 'exam_schedule_detail' exam.schedule_id %}" 
+                                                       class="btn btn-sm btn-outline-info mt-1">
+                                                        <i class="fas fa-eye"></i> Details
+                                                    </a>
+                                                </div>
+                                                {% if not forloop.last %}<hr class="my-1">{% endif %}
+                                            {% empty %}
+                                                <span class="text-secondary">-</span>
+                                            {% endfor %}
+                                        </td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No invigilation duties found for {{ lecturer.name }}</h5>
+                        <p class="text-muted">This lecturer has not been assigned any invigilation duties yet.</p>
+                        {% if lecturer.is_proctor %}
+                            <a href="{% url 'generate_exam_schedule' %}" class="btn btn-info">
+                                <i class="fas fa-magic"></i> Generate Exam Schedule
+                            </a>
+                        {% else %}
+                            <p class="text-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                This lecturer is not marked as a proctor. Please mark them as a proctor in the admin panel.
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 
